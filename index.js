@@ -32,9 +32,17 @@ async function run() {
 
 
     const drawingCollection = client.db("drawingClass").collection("teacher");
+    const classCollection = client.db("drawingClass").collection("class");
 
+    // teacher data
     app.get('/teacher', async(req, res)=>{
         const result = await drawingCollection.find().toArray();
+        res.send(result);
+    })
+
+    // class data
+    app.get('/class', async(req, res)=>{
+        const result = await classCollection.find().toArray();
         res.send(result);
     })
 
