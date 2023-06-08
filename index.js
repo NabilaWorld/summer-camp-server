@@ -33,6 +33,7 @@ async function run() {
 
     const drawingCollection = client.db("drawingClass").collection("teacher");
     const classCollection = client.db("drawingClass").collection("class");
+    const cartCollection = client.db("drawingClass").collection("cart");
 
     // teacher data
     app.get('/teacher', async(req, res)=>{
@@ -44,6 +45,15 @@ async function run() {
     app.get('/class', async(req, res)=>{
         const result = await classCollection.find().toArray();
         res.send(result);
+    })
+
+
+    // cart data post 
+    app.post('/cart', async(req, res) =>{
+      const item = req.body;
+      console.log(item);
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
     })
 
 
