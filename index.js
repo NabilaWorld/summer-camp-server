@@ -57,6 +57,28 @@ async function run() {
     })
 
 
+    // cart collection apis
+    app.get('/carts',  async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        res.send([]);
+      }
+
+      // const decodedEmail = req.decoded.email;
+      // if (email !== decodedEmail) {
+      //   return res.status(403).send({ error: true, message: 'porviden access' })
+      // }
+
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
