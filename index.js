@@ -37,9 +37,21 @@ async function run() {
     const userCollection = client.db("drawingClass").collection("user");
 
 
+    // get users
+    app.get('/users', async(req, res)=>{
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
     // user Collection
     app.post('/users', async(req, res)=>{
       const user = req.body;
+      console.log(user)
+      const query = {email: user.email}
+      const existingUser = await userCollection.findOne(query)
+      if(existingUser){
+        return res.send({message: 'user already exist'})
+      }
       const result = await userCollection.insertOne(user);
       res.send(result);
     })
