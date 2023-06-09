@@ -34,6 +34,15 @@ async function run() {
     const drawingCollection = client.db("drawingClass").collection("teacher");
     const classCollection = client.db("drawingClass").collection("class");
     const cartCollection = client.db("drawingClass").collection("cart");
+    const userCollection = client.db("drawingClass").collection("user");
+
+
+    // user Collection
+    app.post('/users', async(req, res)=>{
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    })
 
     // teacher data
     app.get('/teacher', async(req, res)=>{
