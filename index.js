@@ -56,14 +56,25 @@ async function run() {
     // jwt use
     app.post('/jwt', (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
 
       res.send({ token })
     })
 
+    // use verifyJWT before usong verifyAdmin
+    const verifyAdmin = async(req, res, next)=>{
+      const email = req.decoded.email;
+      const query = {email: email}
+      const user = await userCollection.findOne(query);
+      if(user?.role !== 'admin' ){
+        return res.status(403).send({error: true, message: 'Forbidden message'})
+      }
+      next();
+    }
+
 
     // get users
-    app.get('/users', async(req, res)=>{
+    app.get('/users', verifyJWT, verifyAdmin, async(req, res)=>{
       const result = await userCollection.find().toArray();
       res.send(result);
     })
@@ -97,6 +108,21 @@ async function run() {
     })
 
 
+    // security check
+    app.get('/users/admin/:email', verifyJWT, async (req, res)=>{
+      const email = req.params.email;
+
+      if(req.decoded.email !== email){
+        res.send({ admin: false })
+      }
+
+      const query = {email: email}
+      const user = await userCollection.findOne(query);
+      const result = { admin: user?.role === 'admin' }
+      res.send(result);
+    })
+
+
     // teacher data
     app.get('/teacher', async(req, res)=>{
         const result = await drawingCollection.find().toArray();
@@ -107,6 +133,21 @@ async function run() {
     app.get('/class', async(req, res)=>{
         const result = await classCollection.find().toArray();
         res.send(result);
+    })
+
+    // class data post
+    app.post('/class', verifyJWT, verifyAdmin, async(req, res)=>{
+      const newItem = req.body;
+      const result = await classCollection.insertOne(newItem);
+      res.send(result);
+    })
+
+    // delete class
+    app.delete('/class/:id', verifyJWT, verifyAdmin, async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await classCollection.deleteOne(query);
+      res.send(result);
     })
 
 
