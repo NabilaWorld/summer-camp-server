@@ -52,6 +52,7 @@ async function run() {
     const classCollection = client.db("drawingClass").collection("class");
     const cartCollection = client.db("drawingClass").collection("cart");
     const userCollection = client.db("drawingClass").collection("user");
+    const paidCollection = client.db("drawingClass").collection("paid");
 
 
     // jwt use
@@ -200,6 +201,18 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret
       })
+    })
+
+
+    // payment related api
+    app.post('/paid', verifyJWT, async(req, res)=>{
+      const payment = req.body;
+      const insertResult = await paidCollection.insertOne(payment);
+
+      const query = {_id: {$in: paidCollection.cartItems.map(id => new ObjectId(id) ) }}
+      const deleteResult = await classCollection.deleteMany(query);
+
+      res.send({insertResult, deleteResult});
     })
 
 
