@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId, CURSOR_FLAGS } = require('mongodb');
 const jwt = require('jsonwebtoken') 
 require('dotenv').config();
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
@@ -74,6 +74,25 @@ async function run() {
       next();
     }
 
+    //checking user role
+    app.get('/role/:email', async(req,res)=>{
+      const email = req.params.email;
+      console.log('role', email)
+      const query = {email: email}
+      const user  = await userCollection.findOne(query)
+      res.send(user.role)
+      // console.log(user)
+    })
+
+    // user delete
+    // app.delete('/users/:id', verifyJWT, verifyAdmin, async(req, res)=>{
+    //   const id = req.params.id;
+    //   const query = {_id: new ObjectId(id)}
+    //   const result = await userCollection.deleteOne(query);
+    //   res.send(result);
+    // })    
+
+
 
     // get users
     app.get('/users', verifyJWT, verifyAdmin, async(req, res)=>{
@@ -138,7 +157,7 @@ async function run() {
     })
 
     // class data post
-    app.post('/class', verifyJWT, verifyAdmin, async(req, res)=>{
+    app.post('/class', verifyJWT,  async(req, res)=>{
       const newItem = req.body;
       const result = await classCollection.insertOne(newItem);
       res.send(result);
@@ -207,10 +226,24 @@ async function run() {
     // payment related api
     app.post('/paid', verifyJWT, async(req, res)=>{
       const payment = req.body;
+      console.log(payment)
       const insertResult = await paidCollection.insertOne(payment);
 
-      const query = {_id: {$in: paidCollection.cartItems.map(id => new ObjectId(id) ) }}
-      const deleteResult = await classCollection.deleteMany(query);
+
+      const updateSeats = payment.selectedClass.map(async (classId)=>{
+        const filter = {_id: new ObjectId(classId)};
+        const update = {$inc: {available_seat:-1 }};
+        await classCollection.updateOne(filter, update)
+    })
+
+    await Promise.all(updateSeats)
+
+
+      const query = {_id: {$in: payment.cartItems.map(id => new ObjectId(id) ) }}
+      const deleteResult = await cartCollection.deleteMany(query);
+      
+      
+      console.log(query,deleteResult)
 
       res.send({insertResult, deleteResult});
     })
