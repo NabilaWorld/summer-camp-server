@@ -221,11 +221,7 @@ async function run() {
       const insertResult = await paidCollection.insertOne(payment);
 
 
-      // get paid data
-      // app.get('/paid',verifyJWT, async (req, res) => {
-      //   const result = await paidCollection.find().toArray();
-      //   res.send(result);
-      // });
+      
 
 
       const updateSeats = payment.selectedClass.map(async (classId) => {
@@ -246,9 +242,7 @@ async function run() {
       res.send({ insertResult, deleteResult });
     })
 
-    // app.get('/health', (req, res) => {
-    //   res.send('boss is sitting')
-    // })
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
