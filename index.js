@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId, CURSOR_FLAGS } = require('mongodb');
-const jwt = require('jsonwebtoken') 
+const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000;
@@ -44,7 +44,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
 
 
@@ -64,59 +64,50 @@ async function run() {
     })
 
     // use verifyJWT before usong verifyAdmin
-    const verifyAdmin = async(req, res, next)=>{
+    const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email: email}
+      const query = { email: email }
       const user = await userCollection.findOne(query);
-      if(user?.role !== 'admin' ){
-        return res.status(403).send({error: true, message: 'Forbidden message'})
+      if (user?.role !== 'admin') {
+        return res.status(403).send({ error: true, message: 'Forbidden message' })
       }
       next();
     }
 
     //checking user role
-    app.get('/role/:email', async(req,res)=>{
+    app.get('/role/:email', async (req, res) => {
       const email = req.params.email;
       console.log('role', email)
-      const query = {email: email}
-      const user  = await userCollection.findOne(query)
+      const query = { email: email }
+      const user = await userCollection.findOne(query)
       res.send(user.role)
       // console.log(user)
     })
 
-    // user delete
-    // app.delete('/users/:id', verifyJWT, verifyAdmin, async(req, res)=>{
-    //   const id = req.params.id;
-    //   const query = {_id: new ObjectId(id)}
-    //   const result = await userCollection.deleteOne(query);
-    //   res.send(result);
-    // })    
-
-
 
     // get users
-    app.get('/users', verifyJWT, verifyAdmin, async(req, res)=>{
+    app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     })
 
     // user Collection
-    app.post('/users', async(req, res)=>{
+    app.post('/users', async (req, res) => {
       const user = req.body;
       console.log(user)
-      const query = {email: user.email}
+      const query = { email: user.email }
       const existingUser = await userCollection.findOne(query)
-      if(existingUser){
-        return res.send({message: 'user already exist'})
+      if (existingUser) {
+        return res.send({ message: 'user already exist' })
       }
       const result = await userCollection.insertOne(user);
       res.send(result);
     })
 
     // convert users into admin
-    app.patch('/users/admin/:id', async(req, res)=>{
+    app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
           role: 'admin'
@@ -130,14 +121,14 @@ async function run() {
 
 
     // security check
-    app.get('/users/admin/:email', verifyJWT, async (req, res)=>{
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
 
-      if(req.decoded.email !== email){
+      if (req.decoded.email !== email) {
         res.send({ admin: false })
       }
 
-      const query = {email: email}
+      const query = { email: email }
       const user = await userCollection.findOne(query);
       const result = { admin: user?.role === 'admin' }
       res.send(result);
@@ -145,35 +136,35 @@ async function run() {
 
 
     // teacher data
-    app.get('/teacher', async(req, res)=>{
-        const result = await drawingCollection.find().toArray();
-        res.send(result);
+    app.get('/teacher', async (req, res) => {
+      const result = await drawingCollection.find().toArray();
+      res.send(result);
     })
 
     // class data
-    app.get('/class', async(req, res)=>{
-        const result = await classCollection.find().toArray();
-        res.send(result);
+    app.get('/class', async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
     })
 
     // class data post
-    app.post('/class', verifyJWT,  async(req, res)=>{
+    app.post('/class', verifyJWT, async (req, res) => {
       const newItem = req.body;
       const result = await classCollection.insertOne(newItem);
       res.send(result);
     })
 
     // delete class
-    app.delete('/class/:id', verifyJWT, verifyAdmin, async(req, res)=>{
+    app.delete('/class/:id', verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await classCollection.deleteOne(query);
       res.send(result);
     })
 
 
     // cart data post 
-    app.post('/carts', async(req, res) =>{
+    app.post('/carts', async (req, res) => {
       const item = req.body;
       console.log(item);
       const result = await cartCollection.insertOne(item);
@@ -182,11 +173,11 @@ async function run() {
 
 
     // cart collection apis
-    app.get('/carts', verifyJWT,  async (req, res) => {
+    app.get('/carts', verifyJWT, async (req, res) => {
       const email = req.query.email;
 
       if (!email) {
-        res.send([]);
+        return res.send([]);
       }
 
       const decodedEmail = req.decoded.email;
@@ -209,9 +200,9 @@ async function run() {
 
 
     // create payment intent
-    app.post('/create-payment-intent', verifyJWT, async(req, res)=>{
-      const {price} = req.body;
-      const amount = price*100;
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
@@ -224,47 +215,57 @@ async function run() {
 
 
     // payment related api
-    app.post('/paid', verifyJWT, async(req, res)=>{
+    app.post('/paid',  async (req, res) => {
       const payment = req.body;
       console.log(payment)
       const insertResult = await paidCollection.insertOne(payment);
 
 
-      const updateSeats = payment.selectedClass.map(async (classId)=>{
-        const filter = {_id: new ObjectId(classId)};
-        const update = {$inc: {available_seat:-1 }};
+      // get paid data
+      // app.get('/paid',verifyJWT, async (req, res) => {
+      //   const result = await paidCollection.find().toArray();
+      //   res.send(result);
+      // });
+
+
+      const updateSeats = payment.selectedClass.map(async (classId) => {
+        const filter = { _id: new ObjectId(classId) };
+        const update = { $inc: { available_seat: -1 } };
         await classCollection.updateOne(filter, update)
-    })
+      })
 
-    await Promise.all(updateSeats)
+      await Promise.all(updateSeats)
 
 
-      const query = {_id: {$in: payment.cartItems.map(id => new ObjectId(id) ) }}
+      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
       const deleteResult = await cartCollection.deleteMany(query);
-      
-      
-      console.log(query,deleteResult)
 
-      res.send({insertResult, deleteResult});
+
+      console.log(query, deleteResult)
+
+      res.send({ insertResult, deleteResult });
     })
 
+    // app.get('/health', (req, res) => {
+    //   res.send('boss is sitting')
+    // })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    // await client.close();
+    
   }
 }
 run().catch(console.dir);
 
 
 
-app.get('/', (req, res)=>{
-    res.send('boss is sitting')
+app.get('/', (req, res) => {
+  res.send('boss is sitting')
 })
 
-app.listen(port, ()=>{
-    console.log(`Sir draw the picture${port}`);
+app.listen(port, () => {
+  console.log(`Sir draw the picture${port}`);
 })
